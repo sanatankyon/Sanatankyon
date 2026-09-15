@@ -2,6 +2,23 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
 
+const LANGUAGES = [
+  { code: 'hi', label: 'Hindi' },
+  { code: 'en', label: 'English' },
+  { code: 'gu', label: 'Gujarati' },
+  { code: 'mr', label: 'Marathi' },
+  { code: 'bn', label: 'Bengali' },
+  { code: 'ta', label: 'Tamil' },
+  { code: 'te', label: 'Telugu' },
+  { code: 'kn', label: 'Kannada' },
+  { code: 'ml', label: 'Malayalam' },
+  { code: 'pa', label: 'Punjabi' },
+  { code: 'ur', label: 'Urdu' },
+  { code: 'fr', label: 'French' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'de', label: 'German' },
+]
+
 export default function QuestionPage() {
   const router = useRouter()
   const { id } = router.query
@@ -15,9 +32,11 @@ export default function QuestionPage() {
   const [posting, setPosting] = useState(false)
 
   const [voices, setVoices] = useState([])
-  const [selectedVoice, setSelectedVoice] = useState('')
+  const [selectedLang, setSelectedLang] = useState('hi')
   const [showListen, setShowListen] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const [loadingAudio, setLoadingAudio] = useState(false)
+  const [audioError, setAudioError] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -32,9 +51,7 @@ export default function QuestionPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
     function loadVoices() {
-      const v = window.speechSynthesis.getVoices()
-      setVoices(v)
-      if (v.length && !selectedVoice) setSelectedVoice(v[0].name)
+      setVoices(window.speechSynthesis.getVoices())
     }
     loadVoices()
     window.speechSynthesis.onvoiceschanged = loadVoices
@@ -85,22 +102,37 @@ export default function QuestionPage() {
     loadAnswers()
   }
 
-  function speak() {
+  async function speak() {
     if (!question || typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
+    setAudioError('')
+    setLoadingAudio(true)
 
-    const textParts = [question.title, question.body || '']
-    answers.forEach((a) => textParts.push(a.body))
-    const fullText = textParts.join('. ')
+    try {
+      const textParts = [question.title, question.body || '']
+      answers.forEach((a) => textParts.push(a.body))
+      const fullText = textParts.join('. ').slice(0, 3000)
 
-    const utterance = new SpeechSynthesisUtterance(fullText)
-    const voice = voices.find((v) => v.name === selectedVoice)
-    if (voice) utterance.voice = voice
-    utterance.onend = () => setSpeaking(false)
-    utterance.onerror = () => setSpeaking(false)
+      const res = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${selectedLang}&dt=t&q=${encodeURIComponent(fullText)}`
+      )
+      const data = await res.json()
+      const translatedText = data[0].map((chunk) => chunk[0]).join(' ')
 
-    setSpeaking(true)
-    window.speechSynthesis.speak(utterance)
+      window.speechSynthesis.cancel()
+      const utterance = new SpeechSynthesisUtterance(translatedText)
+      utterance.lang = selectedLang
+      const matchingVoice = voices.find((v) => v.lang.toLowerCase().startsWith(selectedLang))
+      if (matchingVoice) utterance.voice = matchingVoice
+      utterance.onend = () => setSpeaking(false)
+      utterance.onerror = () => setSpeaking(false)
+
+      setSpeaking(true)
+      window.speechSynthesis.speak(utterance)
+    } catch (err) {
+      setAudioError('Could not translate or play audio right now. Please try again.')
+    } finally {
+      setLoadingAudio(false)
+    }
   }
 
   function stopSpeaking() {
@@ -133,23 +165,24 @@ export default function QuestionPage() {
                 zIndex: 50,
               }}
             >
-              <label style={{ fontSize: 12 }}>Voice / language</label>
-              <select value={selectedVoice} onChange={(e) => setSelectedVoice(e.target.value)}>
-                {voices.map((v) => (
-                  <option key={v.name} value={v.name}>
-                    {v.name} ({v.lang})
-                  </option>
+              <label style={{ fontSize: 12 }}>Language</label>
+              <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)}>
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
                 ))}
               </select>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 {!speaking ? (
-                  <button className="btn" type="button" onClick={speak}>Play</button>
+                  <button className="btn" type="button" onClick={speak} disabled={loadingAudio}>
+                    {loadingAudio ? 'Preparing…' : 'Play'}
+                  </button>
                 ) : (
                   <button className="btn btn-outline" type="button" onClick={stopSpeaking}>Stop</button>
                 )}
               </div>
+              {audioError && <p className="error-msg" style={{ marginTop: 8 }}>{audioError}</p>}
               <p style={{ fontSize: 11, color: '#C9B8A6', margin: '8px 0 0 0' }}>
-                Available voices/languages depend on your own device and browser.
+                Text is auto-translated, then read aloud. Voice quality depends on your device.
               </p>
             </div>
           )}
