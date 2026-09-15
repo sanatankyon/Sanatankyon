@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 
 export default function Header() {
   const [session, setSession] = useState(null)
+  const [showTranslate, setShowTranslate] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -26,6 +27,30 @@ export default function Header() {
         </Link>
         <nav className="nav-links">
           <Link href="/">Home</Link>
+          <Link href="/puranas">Puranas</Link>
+          <div style={{ position: 'relative' }}>
+            <button
+              className="btn btn-outline"
+              onClick={() => setShowTranslate(!showTranslate)}
+              type="button"
+            >
+              Translate
+            </button>
+            {showTranslate && (
+              <div
+                id="google_translate_element"
+                style={{
+                  position: 'absolute',
+                  top: '110%',
+                  right: 0,
+                  background: '#2E181C',
+                  padding: 8,
+                  borderRadius: 4,
+                  zIndex: 50,
+                }}
+              />
+            )}
+          </div>
           {session ? (
             <>
               <Link href="/ask" className="btn">Ask a question</Link>
