@@ -38,7 +38,6 @@ export default function Header() {
             </button>
             {showTranslate && (
               <div
-                id="google_translate_element"
                 style={{
                   position: 'absolute',
                   top: '110%',
@@ -47,8 +46,14 @@ export default function Header() {
                   padding: 8,
                   borderRadius: 4,
                   zIndex: 50,
+                  width: 220,
                 }}
-              />
+              >
+                <div id="google_translate_element" />
+                <p style={{ fontSize: 11, color: '#C9B8A6', margin: '6px 0 0 0' }}>
+                  Translations are automated by Google Translate and may not be fully accurate.
+                </p>
+              </div>
             )}
           </div>
           {session ? (
