@@ -22,8 +22,14 @@ export default function Header() {
     <header className="site-header">
       <div className="wrap">
         <Link href="/" className="brand">
-          <span className="mark">सनातन क्यों</span>
-          <span className="sub">SanatanKyon.in</span>
+          <svg className="brand-logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="19" stroke="#E5A64B" strokeWidth="1.5" />
+            <text x="20" y="27" textAnchor="middle" fontSize="20" fill="#E5A64B" fontFamily="serif">ॐ</text>
+          </svg>
+          <span className="brand-text">
+            <span className="mark">सनातन क्यों</span>
+            <span className="sub">SanatanKyon.in</span>
+          </span>
         </Link>
         <nav className="nav-links">
           <Link href="/">Home</Link>
