@@ -17,9 +17,11 @@ export default function Home() {
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTopic, setActiveTopic] = useState(null)
+  const [topicDescription, setTopicDescription] = useState('')
 
   useEffect(() => {
     fetchQuestions(activeTopic)
+    fetchTopicDescription(activeTopic)
   }, [activeTopic])
 
   async function fetchQuestions(topic) {
@@ -35,12 +37,25 @@ export default function Home() {
     setLoading(false)
   }
 
+  async function fetchTopicDescription(topic) {
+    if (!topic) {
+      setTopicDescription('')
+      return
+    }
+    const { data } = await supabase
+      .from('topics')
+      .select('description')
+      .eq('slug', topic)
+      .single()
+    setTopicDescription(data?.description || '')
+  }
+
   return (
-    <>
+    <div className="home-saffron">
       <section className="hero">
         <div className="wrap">
           <svg className="hero-arch" viewBox="0 0 64 40" fill="none">
-            <path d="M2 38 V20 C2 8 12 2 32 2 C52 2 62 8 62 20 V38" stroke="#E5A64B" strokeWidth="3" />
+            <path d="M2 38 V20 C2 8 12 2 32 2 C52 2 62 8 62 20 V38" stroke="#000000" strokeWidth="3" />
           </svg>
           <h1>Ask. Understand. Sanatan Dharma, explained.</h1>
           <p>
@@ -53,13 +68,19 @@ export default function Home() {
 
       <div className="wrap layout">
         <main>
-          <h2 style={{ fontSize: 18, color: '#C9B8A6', fontWeight: 500 }}>
+          <h2 style={{ fontSize: 18 }}>
             {activeTopic ? `Questions on ${activeTopic}` : 'Recent questions'}
           </h2>
 
-          {loading && <p className="empty-state">Loading questions…</p>}
+          {topicDescription && (
+            <div className="q-card" style={{ marginBottom: 24 }}>
+              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{topicDescription}</p>
+            </div>
+          )}
+
+          {loading && <p className="empty-state" style={{ color: '#2A1F00' }}>Loading questions…</p>}
           {!loading && questions.length === 0 && (
-            <p className="empty-state">
+            <p className="empty-state" style={{ color: '#2A1F00' }}>
               No questions here yet. Be the first to ask one.
             </p>
           )}
@@ -105,6 +126,6 @@ export default function Home() {
           </div>
         </aside>
       </div>
-    </>
+    </div>
   )
 }
