@@ -27,6 +27,7 @@ export default function Header() {
         </Link>
         <nav className="nav-links">
           <Link href="/">Home</Link
+    
           <div style={{ position: 'relative' }}>
             <button
               className="btn btn-outline"
