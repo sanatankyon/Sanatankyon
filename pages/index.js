@@ -101,6 +101,7 @@ export default function Home() {
         </main>
 
         <aside>
+            <PanchangWidget />
           <div className="side-block">
             <h3>Topics</h3>
             <ul className="topic-list">
