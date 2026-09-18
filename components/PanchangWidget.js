@@ -22,7 +22,7 @@ function ayanamsaFor(date) {
 function computePanchang(date) {
   const observer = new Astronomy.Observer(DELHI.lat, DELHI.lon, DELHI.elevation)
 
-  const sunLon = Astronomy.EclipticLongitude(Astronomy.Body.Sun, date)
+  const sunLon = Astronomy.SunPosition(date).elon
   const moonLon = Astronomy.EclipticLongitude(Astronomy.Body.Moon, date)
 
   const elong = (moonLon - sunLon + 360) % 360
