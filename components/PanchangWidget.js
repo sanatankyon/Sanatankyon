@@ -76,7 +76,7 @@ export default function PanchangWidget() {
       setData({ ...result, date })
       setError('')
     } catch (e) {
-      setError('Panchang could not be calculated right now.')
+      setError('Panchang error: ' + (e && e.message ? e.message : String(e)))
     }
   }, [offset])
 
