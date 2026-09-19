@@ -172,6 +172,10 @@ if (!question) return <div className="wrap" style={{ paddingTop: 48 }}>Loadingâ€
   }
 
   return (
+     <>
+      <Head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      </Head>
     <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 720 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <span className="topic-tag">{question.topic}</span>
