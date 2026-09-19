@@ -144,6 +144,32 @@ export default function QuestionPage() {
   }
 
   if (!question) return <div className="wrap" style={{ paddingTop: 48 }}>Loading…</div>
+if (!question) return <div className="wrap" style={{ paddingTop: 48 }}>Loading…</div>
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: question.title,
+      text: question.body || question.title,
+      answerCount: answers.length,
+      author: { '@type': 'Person', name: question.profiles?.username || 'Anonymous' },
+      dateCreated: question.created_at,
+      acceptedAnswer: answers.length > 0 ? {
+        '@type': 'Answer',
+        text: answers[0].body,
+        dateCreated: answers[0].created_at,
+        author: { '@type': 'Person', name: answers[0].profiles?.username || 'Anonymous' },
+      } : undefined,
+      suggestedAnswer: answers.slice(1).map((a) => ({
+        '@type': 'Answer',
+        text: a.body,
+        dateCreated: a.created_at,
+        author: { '@type': 'Person', name: a.profiles?.username || 'Anonymous' },
+      })),
+    },
+  }
 
   return (
     <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60, maxWidth: 720 }}>
