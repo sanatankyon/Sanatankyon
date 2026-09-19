@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
+import { supabase } from '../../lib/supabaseClient'
+import Head from 'next/head'
 
 const LANGUAGES = [
   { code: 'hi', label: 'Hindi' },
