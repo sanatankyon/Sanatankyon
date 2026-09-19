@@ -10,13 +10,27 @@ const NAKSHATRAS = [
 
 const RASHIS = ['Mesha', 'Vrishabha', 'Mithuna', 'Karka', 'Simha', 'Kanya', 'Tula', 'Vrischika', 'Dhanu', 'Makara', 'Kumbha', 'Meena']
 
+const HINDU_MONTHS = ['Vaishakha', 'Jyeshtha', 'Ashadha', 'Shravana', 'Bhadrapada', 'Ashwin', 'Kartik', 'Margashirsha', 'Pausha', 'Magha', 'Phalguna', 'Chaitra']
+
 const TITHI_NAMES = ['Pratipada', 'Dwitiya', 'Tritiya', 'Chaturthi', 'Panchami', 'Shashthi', 'Saptami', 'Ashtami', 'Navami', 'Dashami', 'Ekadashi', 'Dwadashi', 'Trayodashi', 'Chaturdashi']
+
+const RAHU_SEGMENT = [8, 2, 7, 5, 6, 4, 3]
+const YAMAGANDA_SEGMENT = [5, 4, 3, 2, 1, 7, 6]
+const GULIKA_SEGMENT = [7, 6, 5, 4, 3, 2, 1]
 
 const DELHI = { lat: 28.6139, lon: 77.2090, elevation: 0 }
 
 function ayanamsaFor(date) {
   const year = date.getFullYear() + date.getMonth() / 12
   return 23.85 + 0.0139 * (year - 2000)
+}
+
+function segmentWindow(sunrise, sunset, segmentNumber) {
+  if (!sunrise || !sunset) return null
+  const partMs = (sunset.getTime() - sunrise.getTime()) / 8
+  const start = new Date(sunrise.getTime() + (segmentNumber - 1) * partMs)
+  const end = new Date(sunrise.getTime() + segmentNumber * partMs)
+  return { start, end }
 }
 
 function computePanchang(date) {
@@ -37,7 +51,9 @@ function computePanchang(date) {
   const nakshatra = NAKSHATRAS[Math.floor(siderealMoonLon / (360 / 27)) % 27]
 
   const siderealSunLon = (sunLon - ayanamsa + 360) % 360
-  const rashi = RASHIS[Math.floor(siderealSunLon / 30) % 12]
+  const rashiIndex = Math.floor(siderealSunLon / 30) % 12
+  const rashi = RASHIS[rashiIndex]
+  const hinduMonth = HINDU_MONTHS[rashiIndex]
 
   let sunrise = null
   let sunset = null
@@ -53,14 +69,36 @@ function computePanchang(date) {
     sunset = null
   }
 
+  const weekday = date.getDay()
+  const rahuKaal = segmentWindow(sunrise, sunset, RAHU_SEGMENT[weekday])
+  const yamagandaKaal = segmentWindow(sunrise, sunset, YAMAGANDA_SEGMENT[weekday])
+  const gulikaKaal = segmentWindow(sunrise, sunset, GULIKA_SEGMENT[weekday])
+
+  let abhijit = null
+  if (sunrise && sunset) {
+    const noon = new Date((sunrise.getTime() + sunset.getTime()) / 2)
+    abhijit = {
+      start: new Date(noon.getTime() - 24 * 60000),
+      end: new Date(noon.getTime() + 24 * 60000),
+    }
+  }
+
   const vikramSamvat = date.getFullYear() + 57
 
-  return { tithiName, paksha, isPurnima, isAmavasya, nakshatra, rashi, sunrise, sunset, vikramSamvat }
+  return {
+    tithiName, paksha, isPurnima, isAmavasya, nakshatra, rashi, hinduMonth,
+    sunrise, sunset, vikramSamvat, rahuKaal, yamagandaKaal, gulikaKaal, abhijit,
+  }
 }
 
 function formatTime(d) {
   if (!d) return '—'
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatRange(range) {
+  if (!range) return '—'
+  return `${formatTime(range.start)} – ${formatTime(range.end)}`
 }
 
 export default function PanchangWidget() {
@@ -76,7 +114,7 @@ export default function PanchangWidget() {
       setData({ ...result, date })
       setError('')
     } catch (e) {
-      setError('Panchang error: ' + (e && e.message ? e.message : String(e)))
+      setError('Panchang could not be calculated right now.')
     }
   }, [offset])
 
@@ -98,6 +136,7 @@ export default function PanchangWidget() {
             {data.date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <p><span>Vikram Samvat</span><strong>{data.vikramSamvat}</strong></p>
+          <p><span>Hindu Month</span><strong>{data.hinduMonth}</strong></p>
           <p><span>Tithi</span><strong>{data.paksha} {data.tithiName}</strong></p>
           <p><span>Nakshatra</span><strong>{data.nakshatra}</strong></p>
           <p><span>Sun Rashi</span><strong>{data.rashi}</strong></p>
@@ -105,6 +144,12 @@ export default function PanchangWidget() {
           <p><span>Sunset</span><strong>{formatTime(data.sunset)}</strong></p>
           {data.isPurnima && <p className="panchang-flag">🌕 Purnima today</p>}
           {data.isAmavasya && <p className="panchang-flag">🌑 Amavasya today</p>}
+
+          <p className="panchang-subhead">Muhurat Timings</p>
+          <p className="muhurat-row bad"><span>Rahu Kaal</span><strong>{formatRange(data.rahuKaal)}</strong></p>
+          <p className="muhurat-row bad"><span>Yamaganda Kaal</span><strong>{formatRange(data.yamagandaKaal)}</strong></p>
+          <p className="muhurat-row bad"><span>Gulika Kaal</span><strong>{formatRange(data.gulikaKaal)}</strong></p>
+          <p className="muhurat-row good"><span>Abhijit Muhurat</span><strong>{formatRange(data.abhijit)}</strong></p>
         </div>
       )}
 
