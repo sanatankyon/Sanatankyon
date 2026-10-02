@@ -108,7 +108,7 @@ export default function Register() {
           )}
 
           <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete="new-password" />
 
           {error && <p className="error-msg">{error}</p>}
 
