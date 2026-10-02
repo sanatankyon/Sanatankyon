@@ -77,7 +77,7 @@ export default function Login() {
           )}
 
           <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
 
           {error && <p className="error-msg">{error}</p>}
 
