@@ -45,6 +45,7 @@ function computePanchang(date) {
   const isPurnima = tithiIndex === 14
   const isAmavasya = tithiIndex === 29
   const tithiName = isPurnima ? 'Purnima' : isAmavasya ? 'Amavasya' : TITHI_NAMES[tithiIndex % 15]
+  const tithiDayNumber = (tithiIndex % 15) + 1
 
   const ayanamsa = ayanamsaFor(date)
   const siderealMoonLon = (moonLon - ayanamsa + 360) % 360
@@ -86,7 +87,7 @@ function computePanchang(date) {
   const vikramSamvat = date.getFullYear() + 57
 
   return {
-    tithiName, paksha, isPurnima, isAmavasya, nakshatra, rashi, hinduMonth,
+    tithiName, tithiDayNumber, paksha, isPurnima, isAmavasya, nakshatra, rashi, hinduMonth,
     sunrise, sunset, vikramSamvat, rahuKaal, yamagandaKaal, gulikaKaal, abhijit,
   }
 }
@@ -135,6 +136,7 @@ export default function PanchangWidget() {
           <p className="panchang-date">
             {data.date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
+          <p><span>Hindu Date</span><strong>{data.tithiDayNumber} {data.hinduMonth}, {data.vikramSamvat}</strong></p>
           <p><span>Vikram Samvat</span><strong>{data.vikramSamvat}</strong></p>
           <p><span>Hindu Month</span><strong>{data.hinduMonth}</strong></p>
           <p><span>Tithi</span><strong>{data.paksha} {data.tithiName}</strong></p>
