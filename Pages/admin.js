@@ -10,6 +10,10 @@ export default function Admin() {
   const [questions, setQuestions] = useState([])
   const [entries, setEntries] = useState([])
   const [newEntry, setNewEntry] = useState({ title: '', article_text: '', image_url: '', pdf_url: '', display_order: 0 })
+  const [videos, setVideos] = useState([])
+  const [newVideo, setNewVideo] = useState({ title: '', description: '', display_order: 0 })
+  const [videoFile, setVideoFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     checkAdmin()
@@ -22,11 +26,7 @@ export default function Admin() {
       router.push('/login')
       return
     }
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
     if (!profile?.is_admin) {
       setChecking(false)
       setAuthorized(false)
@@ -37,6 +37,7 @@ export default function Admin() {
     loadTopics()
     loadQuestions()
     loadEntries()
+    loadVideos()
   }
 
   async function loadTopics() {
@@ -53,11 +54,13 @@ export default function Admin() {
   }
 
   async function loadEntries() {
-    const { data } = await supabase
-      .from('puranas_entries')
-      .select('*')
-      .order('display_order')
+    const { data } = await supabase.from('puranas_entries').select('*').order('display_order')
     setEntries(data || [])
+  }
+
+  async function loadVideos() {
+    const { data } = await supabase.from('videos').select('*').order('display_order')
+    setVideos(data || [])
   }
 
   async function saveTopicDescription(slug, description) {
@@ -94,6 +97,38 @@ export default function Admin() {
     loadEntries()
   }
 
+  async function uploadVideo() {
+    if (!videoFile) {
+      alert('Please choose a video file first.')
+      return
+    }
+    setUploading(true)
+    const fileName = `${Date.now()}-${videoFile.name}`
+    const { error: uploadError } = await supabase.storage.from('videos-files').upload(fileName, videoFile)
+    if (uploadError) {
+      alert('Upload failed: ' + uploadError.message)
+      setUploading(false)
+      return
+    }
+    const { data: urlData } = supabase.storage.from('videos-files').getPublicUrl(fileName)
+    await supabase.from('videos').insert({
+      title: newVideo.title,
+      description: newVideo.description,
+      display_order: newVideo.display_order,
+      video_url: urlData.publicUrl,
+    })
+    setNewVideo({ title: '', description: '', display_order: 0 })
+    setVideoFile(null)
+    setUploading(false)
+    loadVideos()
+  }
+
+  async function deleteVideo(id) {
+    if (!confirm('Delete this video?')) return
+    await supabase.from('videos').delete().eq('id', id)
+    loadVideos()
+  }
+
   if (checking) return <div className="wrap" style={{ paddingTop: 48 }}>Checking access…</div>
   if (!authorized) return <div className="wrap" style={{ paddingTop: 48 }}>You don't have admin access.</div>
 
@@ -105,10 +140,7 @@ export default function Admin() {
       {topics.map((t) => (
         <div className="form-card" key={t.slug} style={{ marginBottom: 16, maxWidth: '100%' }}>
           <label>{t.name_en}</label>
-          <textarea
-            defaultValue={t.description || ''}
-            onBlur={(e) => saveTopicDescription(t.slug, e.target.value)}
-          />
+          <textarea defaultValue={t.description || ''} onBlur={(e) => saveTopicDescription(t.slug, e.target.value)} />
           <p className="hint">Saves automatically when you tap away from the box.</p>
         </div>
       ))}
@@ -123,7 +155,6 @@ export default function Admin() {
           <button className="btn btn-outline" style={{ marginTop: 10 }} onClick={() => deleteQuestion(q.id)}>
             Delete question
           </button>
-
           {q.answers?.length > 0 && (
             <div style={{ marginTop: 16 }}>
               <p className="hint">Answers:</p>
@@ -147,7 +178,6 @@ export default function Admin() {
           </button>
         </div>
       ))}
-
       <div className="form-card" style={{ maxWidth: '100%' }}>
         <h3 style={{ fontSize: 16 }}>Add new Puranas entry</h3>
         <label>Title</label>
@@ -162,6 +192,32 @@ export default function Admin() {
         <input type="number" value={newEntry.display_order} onChange={(e) => setNewEntry({ ...newEntry, display_order: Number(e.target.value) })} />
         <div className="form-actions">
           <button className="btn" onClick={addEntry}>Add entry</button>
+        </div>
+      </div>
+
+      <h2 style={{ marginTop: 40 }}>Videos</h2>
+      {videos.map((v) => (
+        <div className="form-card" key={v.id} style={{ marginBottom: 16, maxWidth: '100%' }}>
+          <strong>{v.title}</strong>
+          <button className="btn btn-outline" style={{ marginTop: 10, display: 'block' }} onClick={() => deleteVideo(v.id)}>
+            Delete
+          </button>
+        </div>
+      ))}
+      <div className="form-card" style={{ maxWidth: '100%' }}>
+        <h3 style={{ fontSize: 16 }}>Upload a new video</h3>
+        <label>Title</label>
+        <input value={newVideo.title} onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })} />
+        <label>Description (optional)</label>
+        <textarea value={newVideo.description} onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })} />
+        <label>Display order</label>
+        <input type="number" value={newVideo.display_order} onChange={(e) => setNewVideo({ ...newVideo, display_order: Number(e.target.value) })} />
+        <label>Video file</label>
+        <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files[0])} />
+        <div className="form-actions">
+          <button className="btn" onClick={uploadVideo} disabled={uploading}>
+            {uploading ? 'Uploading…' : 'Upload video'}
+          </button>
         </div>
       </div>
     </div>
