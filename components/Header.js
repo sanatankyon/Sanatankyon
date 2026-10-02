@@ -4,15 +4,29 @@ import { supabase } from '../lib/supabaseClient'
 
 export default function Header() {
   const [session, setSession] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [showTranslate, setShowTranslate] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      if (data.session) checkAdmin(data.session.user.id)
+    })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess)
+      if (sess) {
+        checkAdmin(sess.user.id)
+      } else {
+        setIsAdmin(false)
+      }
     })
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  async function checkAdmin(userId) {
+    const { data } = await supabase.from('profiles').select('is_admin').eq('id', userId).single()
+    setIsAdmin(data?.is_admin || false)
+  }
 
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -33,6 +47,8 @@ export default function Header() {
         </Link>
         <nav className="nav-links">
           <Link href="/">Home</Link>
+          <Link href="/videos">Videos</Link>
+          {isAdmin && <Link href="/admin">Admin</Link>}
           <div style={{ position: 'relative' }}>
             <button
               className="btn btn-outline"
