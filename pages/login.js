@@ -61,7 +61,7 @@ export default function Login() {
           {method === 'email' ? (
             <>
               <label>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
             </>
           ) : (
             <>
